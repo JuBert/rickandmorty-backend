@@ -1,9 +1,27 @@
 const { db } = require('./util/admin');
 const config = require('./util/config');
 const firebase = require('firebase');
+const axios = require('axios');
 firebase.initializeApp(config);
 
 const { validateSignupData, validateLoginData } = require('./util/validators');
+
+// GET R&M CHARACTERS
+
+exports.getCharacters = (req, res) => {
+  axios
+    .get('https://rickandmortyapi.com/api/character/')
+    .then((response) => {
+      let result = [];
+      result = response.data;
+      return res.status(200).json(result);
+    })
+    .catch((err) => {
+      res.status(500).json({
+        error: err,
+      });
+    });
+};
 
 // GET USER INFO - FAVORITE CHARACTERS
 exports.getFavCharacters = (req, res) => {
@@ -24,16 +42,40 @@ exports.getFavCharacters = (req, res) => {
     .catch((err) => console.error(err));
 };
 
-// POST USER INFO - FAVORITE CHARACTERS
-exports.postNewFavorite = (req, res) => {
-  const newFavorite = {
-    favCharacters: req.body.favCharacters,
-  };
+// ADD REMOVE FAVORITE CHARACTERS
+exports.addNewFavorite = (req, res) => {
+  // Get new favorite character and save in new array
+  const newStringCharacterId = req.params.favoriteId;
+  const newNumberCharacterId = parseInt(newStringCharacterId);
+  const newFav = [];
+  newFav.push(newNumberCharacterId);
 
+  // Get existing favorites array and push new favorite / remove it if duplicate
+  let updatedFavs = [];
+  let newFavorite = {};
   db.doc(`/users/${req.user.handle}`)
-    .update(newFavorite)
-    .then(() => {
-      return res.json({ message: `document updated succesfully` });
+    .get()
+    .then((doc) => {
+      if (!doc.exists) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      let { favCharacters } = doc.data();
+      if (favCharacters.some((characters) => newFav.includes(characters))) {
+        updatedFavs = favCharacters.filter((item) => !newFav.includes(item));
+      } else {
+        updatedFavs = favCharacters.concat(newFav);
+      }
+      newFavorite = {
+        favCharacters: updatedFavs,
+      };
+      return db
+        .doc(`/users/${req.user.handle}`)
+        .update(newFavorite)
+        .then(() => {
+          return res
+            .status(200)
+            .json({ message: `document updated succesfully` });
+        });
     })
     .catch((err) => {
       console.error(err);
