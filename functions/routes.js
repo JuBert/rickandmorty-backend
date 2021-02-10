@@ -25,21 +25,31 @@ exports.getCharacters = (req, res) => {
 
 // GET USER INFO - FAVORITE CHARACTERS
 exports.getFavCharacters = (req, res) => {
-  db.collection('users')
-    .orderBy('createdAt', 'desc')
+  let favoriteCharacters;
+  db.doc(`/users/${req.user.handle}`)
     .get()
-    .then((data) => {
-      let favorites = [];
-      data.forEach((doc) => {
-        favorites.push({
-          userName: doc.id,
-          favCharacters: doc.data().favCharacters,
-          createdAt: doc.data().createdAt,
-        });
-      });
-      return res.json(favorites);
+    .then((doc) => {
+      if (!doc.exists) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      favoriteCharacters = doc.data().favCharacters;
+      return favoriteCharacters;
     })
-    .catch((err) => console.error(err));
+    .then(() => {
+      const url = 'https://rickandmortyapi.com/api/character/';
+      const favoriteUrl = url.concat(favoriteCharacters);
+      return axios.get(favoriteUrl).then((response) => {
+        let result = [];
+        result = response.data;
+        return res.status(200).json(result);
+      });
+    })
+    .catch((err) => {
+      res.status(500).json({
+        error: err,
+      });
+      console.log(err);
+    });
 };
 
 // ADD REMOVE FAVORITE CHARACTERS

@@ -13,7 +13,7 @@ const {
 
 // Characters route
 app.get('/characters', FBAuth, getCharacters); // get all characters
-app.get('characters/favorites', FBAuth, getFavCharacters); // get 1 user's favs
+app.get('/favorites', FBAuth, getFavCharacters); // get 1 user's favs
 app.get('/characters/:favoriteId', FBAuth, addNewFavorite); // get old favs, push new fav
 
 // User Routes
