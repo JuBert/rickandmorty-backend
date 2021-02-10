@@ -23,7 +23,7 @@ exports.getCharacters = (req, res) => {
     });
 };
 
-// GET USER INFO - FAVORITE CHARACTERS
+// GET USER'S FAVORITE CHARACTERS
 exports.getFavCharacters = (req, res) => {
   let favoriteCharacters;
   db.doc(`/users/${req.user.handle}`)
